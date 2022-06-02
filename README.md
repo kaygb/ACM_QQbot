@@ -5,10 +5,11 @@ ACM_Contest_QQbot</a>修改（膜拜<a href="https://github.com/INGg" target="__
 ## 本项目与原项目的区别
 
 1. 将 codeforces 、牛客、atc、LeetCode的比赛以json形式保存在本地；
-2. 把本校ACM实验室成员的 codeforces rating 数据以json的形式保存在本地；
+2. ~~把本校ACM实验室成员的 codeforces rating 数据以json的形式保存在本地；~~ 将添加的cf用户rating数据以json形式保存到本地，同时将不同群添加的cf用户进行分离，每个群在进行cf总查询时仅显示本群所有cf用户信息
 3. 把本校所有牛客用户的牛客 rating 数据以 json 形式保存在本地。
 4. 将所有定时任务放入一个函数统一处理
-5. 部分功能有所出入
+5. 拥有今日人品功能
+6. 其他类似功能部分有所出入
 
 提供定时/手动更新本地数据功能，仅在更新时与cf、牛客、atc、LeetCode进行交互，加速用户使用机器人时的查询速度并降低了被反爬虫的概率。
 
