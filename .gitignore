@@ -1,0 +1,10 @@
+/.idea/
+mirai
+img
+cftest.py
+test.py
+log.txt
+oj_json
+Pipfile
+Pipfile.lock
+cfrs.txt
