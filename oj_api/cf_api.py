@@ -107,7 +107,7 @@ class CF(Contest):
         all_rating["all_rating"] = rating
         f.seek(0)
         f.truncate()
-        json.dump(all_rating, f)
+        json.dump(all_rating, f, indent=4)
         f.close()
         for uname in rating:
             res += await self.format_rating_res(uname, rating[uname])
@@ -141,7 +141,7 @@ class CF(Contest):
                     all_rating[group_id].append(uname)
                     f.seek(0)
                     f.truncate()
-                    json.dump(all_rating, f)
+                    json.dump(all_rating, f, indent=4)
                     return True
                 final_contest = await self.get_final_contest()
                 if not final_contest:
@@ -154,7 +154,7 @@ class CF(Contest):
                     all_rating["all_rating"] = rating
                     f.seek(0)
                     f.truncate()
-                    json.dump(all_rating, f)
+                    json.dump(all_rating, f, indent=4)
                     return True
                 else:
                     return False
@@ -175,7 +175,7 @@ class CF(Contest):
             all_rating[group_id].remove(uname)
             f.seek(0)
             f.truncate()
-            json.dump(all_rating, f)
+            json.dump(all_rating, f, indent=4)
             return True
 
     # 格式化查询cf rating输出

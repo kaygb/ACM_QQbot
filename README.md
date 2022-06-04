@@ -31,7 +31,6 @@ ACM_Contest_QQbot</a>修改（膜拜<a href="https://github.com/INGg" target="__
 - 订阅cf/牛客/lc/atc -> 在这些比赛开始前15分钟发送报名定时提醒，cf和牛客还有准时的上号提醒
 - 订阅每日提醒 -> 每天早上8点发送当日比赛
 - 取消订阅cf/牛客/lc/atc/每日提醒 -> 取消这些订阅
-- 目前订阅相关功能仅支持群聊
 
 ## 部署方法
 1. 请直接参考原项目部署方法进行部署
@@ -46,10 +45,10 @@ ACM_Contest_QQbot</a>修改（膜拜<a href="https://github.com/INGg" target="__
 5. 在subscribe.json文件中添加以下内容
 ```json
 {
-    "cf": [],
-    "\u725b\u5ba2": [],
-    "lc": [],
-    "atc": [],
-    "today": []
+    "cf": {},
+    "\u725b\u5ba2": {},
+    "lc": {},
+    "atc": {},
+    "today": {}
 }
 ```

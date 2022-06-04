@@ -11,12 +11,13 @@ import json
 from mirai.models.api import MessageFromIdResponse
 from log import Log
 from oj_api import atc_api, cf_api, nc_api, lc_api
-from mirai.models import NewFriendRequestEvent, Quote
+from mirai.models import NewFriendRequestEvent, Quote, Group, Friend
 from mirai import Startup, Shutdown, MessageEvent
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from mirai_extensions.trigger import HandlerControl, Filter
 from mirai import Mirai, WebSocketAdapter, FriendMessage, At, Plain, MessageChain, Image, GroupMessage
+from mirai.exceptions import ApiError
 
 sys.stdout = Log.Logger()  # 定义log类
 sys.stderr = Log.Logger()
@@ -135,7 +136,7 @@ if __name__ == '__main__':
                                    "\n查询cf/牛客/atc分数id -> 查询对应id的cf/牛客/atc分数"
                                    "\n添加/删除cf用户id -> 添加/删除本群cf用户"
                                    "\ncf总查询 -> 查询本群所有cf用户rating分"
-                                   "\n订阅cf/牛客/lc/atc -> 在比赛开始前15分钟发送定时提醒(订阅功能仅群聊可用)"
+                                   "\n订阅cf/牛客/lc/atc -> 在比赛开始前15分钟发送定时提醒"
                                    "\n订阅每日提醒 -> 每天早上8点提醒当日所有比赛"
                                    "\n取消订阅cf/牛客/lc/atc/每日提醒"
                                    "\n随机/来只蕊神 -> 随机蕊神语录"
@@ -162,23 +163,43 @@ if __name__ == '__main__':
 
 
     @bot.on(MessageEvent)
+    async def withdraw_message(event: MessageEvent):
+        msg = "".join(map(str, event.message_chain[Plain]))
+        if msg.strip() == "撤回":
+            if event.sender.id == 2454256424:
+                quotes = event.message_chain[Quote]
+                if quotes:
+                    message: MessageFromIdResponse = await bot.message_from_id(quotes[0].id)
+                    try:
+                        await bot.recall(message.data.message_chain.message_id)
+                    except ApiError:
+                        await bot.send(event, "撤回失败！")
+                        pass
+
+
+    @bot.on(MessageEvent)
     async def subscribe(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
-        m = re.match(r'^订阅\s*([\w.,-]+)\s*$', msg.strip(), re.I)
-        if m:
-            k = m.group(1).lower()
+        if msg[:2] == '订阅':
+            k = msg[2:].lower()
             if k == '每日提醒':
                 k = "today"
             if k in ['cf', '牛客', 'lc', 'atc', 'today']:
+                e_type = event.type
+                if e_type == 'GroupMessage':
+                    id = event.sender.group.id
+                else:
+                    id = event.sender.id
+                id = str(id)
                 with open('./oj_json/subscribe.json', 'r+', encoding='utf-8') as f:
                     all_subscribe = json.load(f)
-                    if event.sender.group.id in all_subscribe[k]:
+                    if id in all_subscribe[k]:
                         await bot.send(event, "该内容已订阅！")
                     else:
-                        all_subscribe[k].append(event.sender.group.id)
+                        all_subscribe[k][id] = e_type
                         f.seek(0)
                         f.truncate()
-                        json.dump(all_subscribe, f)
+                        json.dump(all_subscribe, f, indent=4)
                         await bot.send(event, "添加订阅成功！")
             else:
                 await bot.send(event, "请输入正确的订阅内容！")
@@ -187,21 +208,26 @@ if __name__ == '__main__':
     @bot.on(MessageEvent)
     async def delete_subscribe(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
-        m = re.match(r'^取消订阅\s*([\w.,-]+)\s*$', msg.strip(), re.I)
-        if m:
-            k = m.group(1).lower()
+        if msg[:4] == '取消订阅':
+            k = msg[4:].lower()
             if k == '每日提醒':
                 k = "today"
             if k in ['cf', '牛客', 'lc', 'atc', 'today']:
                 with open('./oj_json/subscribe.json', 'r+', encoding='utf-8') as f:
                     all_subscribe = json.load(f)
-                    if event.sender.group.id not in all_subscribe[k]:
-                        await bot.send(event, "本群暂未订阅该内容！")
+                    e_type = event.type
+                    if e_type == 'GroupMessage':
+                        id = event.sender.group.id
                     else:
-                        all_subscribe[k].remove(event.sender.group.id)
+                        id = event.sender.id
+                    id = str(id)
+                    if id not in all_subscribe[k]:
+                        await bot.send(event, "暂未订阅该内容！")
+                    else:
+                        del all_subscribe[k][id]
                         f.seek(0)
                         f.truncate()
-                        json.dump(all_subscribe, f)
+                        json.dump(all_subscribe, f, indent=4)
                         await bot.send(event, "取消订阅成功！")
             else:
                 await bot.send(event, "请输入正确的订阅内容！")
@@ -225,8 +251,6 @@ if __name__ == '__main__':
     async def qcjj_query(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
         if msg.strip() == "来只清楚":
-            # img_list = os.listdir('./img/qcjj/')
-            # img_local = './img/qcjj/' + random.choice(img_list)
             img_local = await lzqc()
             print(img_local)
             message_chain = MessageChain([
@@ -239,8 +263,6 @@ if __name__ == '__main__':
     async def qcjj_query(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
         if msg.strip() == "随机蕊神" or msg.strip() == "随机闵神" or msg.strip() == "来只蕊神":
-            # img_list = os.listdir('./img/ruishen/')
-            # img_local = './img/ruishen/' + random.choice(img_list)
             img_local = await sjrs()
             print(img_local)
             message_chain = MessageChain([
@@ -279,7 +301,6 @@ if __name__ == '__main__':
         if msg.strip() == '添加蕊神':
             if event.sender.id == 2454256424:
                 quotes = event.message_chain[Quote]
-                print(quotes[0].id)
                 message: MessageFromIdResponse = await bot.message_from_id(quotes[0].id)
                 images = message.data.message_chain[Image]
                 for image in images:
@@ -345,7 +366,7 @@ if __name__ == '__main__':
 
 
     @bot.on(MessageEvent)
-    async def query_cf_contest(event: MessageEvent):  # 查询最近比赛
+    async def query_cf_contest(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
         if msg.strip().lower() == 'cf':
             global cf
@@ -370,10 +391,13 @@ if __name__ == '__main__':
         msg = "".join(map(str, event.message_chain[Plain]))
         m = re.match(r'^添加cf用户\s*([\w.,-]+)\s*$', msg.strip(), re.I)
         if m:
-            unames = m.group(1).split(',')
-            for uname in unames:
-                group_id = str(event.sender.group.id)
-                await bot.send(event, '添加成功！' if await cf.add_cf_user(uname, group_id) else "该用户不存在！")
+            if event.type == "FriendMessage":
+                await bot.send(event, "此功能暂时仅支持群聊！")
+            else:
+                unames = m.group(1).split(',')
+                for uname in unames:
+                    group_id = str(event.sender.group.id)
+                    await bot.send(event, '添加成功！' if await cf.add_cf_user(uname, group_id) else "该用户不存在！")
 
 
     @bot.on(MessageEvent)
@@ -381,10 +405,13 @@ if __name__ == '__main__':
         msg = "".join(map(str, event.message_chain[Plain]))
         m = re.match(r'^删除cf用户\s*([\w.,-]+)\s*$', msg.strip(), re.I)
         if m:
-            unames = m.group(1).split(',')
-            for uname in unames:
-                group_id = str(event.sender.group.id)
-                await bot.send(event, '删除成功！' if await cf.del_cf_user(uname, group_id) else '该用户不存在！')
+            if event.type == "FriendMessage":
+                await bot.send(event, "此功能暂时仅支持群聊！")
+            else:
+                unames = m.group(1).split(',')
+                for uname in unames:
+                    group_id = str(event.sender.group.id)
+                    await bot.send(event, '删除成功！' if await cf.del_cf_user(uname, group_id) else '该用户不存在！')
 
 
     @bot.on(MessageEvent)
@@ -407,18 +434,23 @@ if __name__ == '__main__':
     async def all_q(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
         if msg.strip().lower() == "cf总查询":
-            group_id = str(event.sender.group.id)
-            res = await cf.get_cf_rating(group_id)
-            await bot.send(event, res)
+            if event.type == "FriendMessage":
+                await bot.send(event, "此功能暂时仅支持群聊！")
+            else:
+                group_id = str(event.sender.group.id)
+                res = await cf.get_cf_rating(group_id)
+                await bot.send(event, res)
 
 
     @bot.on(MessageEvent)
     async def send_all_q(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
-        if msg.strip().lower() == "发送cf分数":
-            res = await cf.get_cf_rating('805571983')
-            await bot.send_group_message(805571983, "cf分数更新成功！")
-            await bot.send_group_message(805571983, res)
+        if msg.strip().lower()[:6] == "发送cf分数":
+            group = msg.strip().lower()[6:]
+            group = group if group else '805571983'
+            res = await cf.get_cf_rating(group)
+            await bot.send_group_message(int(group), "cf分数更新成功！")
+            await bot.send_group_message(int(group), res)
 
 
     @bot.on(MessageEvent)
@@ -441,7 +473,7 @@ if __name__ == '__main__':
 
 
     @bot.on(MessageEvent)
-    async def query_atc_contest(event: MessageEvent):  # 查询最近比赛
+    async def query_atc_contest(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
         if msg.strip().lower() == 'atc':
             global atc
@@ -450,7 +482,7 @@ if __name__ == '__main__':
 
 
     @bot.on(MessageEvent)
-    async def query_atc_rank(event: MessageEvent):  # 查询对应人的分数
+    async def query_atc_rank(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
 
         m = re.match(r'^查询ATC分数\s*([\w.-]+)\s*$', msg.strip(), re.I)
@@ -460,7 +492,7 @@ if __name__ == '__main__':
         if m:
             name = m.group(1)
             global atc
-            if int(time.time()) - atc.query_time < 5:  # 每次询问要大于5秒
+            if int(time.time()) - atc.query_time < 5:
                 await bot.send(event, '不要频繁查询，请{}秒后再试'.format(atc.query_time + 5 - int(time.time())))
                 return
             statue = await atc.get_rating(name)
@@ -479,7 +511,7 @@ if __name__ == '__main__':
 
 
     @bot.on(MessageEvent)
-    async def query_nc_contest(event: MessageEvent):  # 查询最近比赛
+    async def query_nc_contest(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
         if msg.strip() == "牛客":
             global nc
@@ -521,70 +553,64 @@ if __name__ == '__main__':
             await bot.send(event, res)
 
 
-    async def cf_note():
-        global cf
-        recent = await cf.get_recent_info()
+    async def note(name, content):
         with open('./oj_json/subscribe.json', 'r', encoding='utf-8') as f:
             all_subscribe = json.load(f)
-            for group in all_subscribe["cf"]:
-                await bot.send_group_message(group, recent)
+            for user_id in all_subscribe[name]:
+                if all_subscribe[name][user_id] == 'GroupMessage':
+                    event = Group(id=user_id, name='', permission='MEMBER')
+                else:
+                    event = Friend(id=user_id)
+                try:
+                    await bot.send(event, content)
+                except:
+                    await bot.send_friend_message(2454256424, "{}不存在".format(id))
+                    
+
+
+    async def cf_note():
+        global cf
+        message_chain = await cf.get_recent_info()
+        await note('cf', message_chain)
 
 
     async def cf_shang_hao():
         message_chain = MessageChain([
             await Image.from_local('./img/up_cf.jpg')
         ])
-        with open('./oj_json/subscribe.json', 'r', encoding='utf-8') as f:
-            all_subscribe = json.load(f)
-            for group in all_subscribe["cf"]:
-                await bot.send_group_message(group, recent)
+        await note('cf', message_chain)
 
 
     async def cf_xia_hao():
         message_chain = MessageChain([
             await Image.from_local('./img/down_cf.jpg')
         ])
-        with open('./oj_json/subscribe.json', 'r', encoding='utf-8') as f:
-            all_subscribe = json.load(f)
-            for group in all_subscribe["cf"]:
-                await bot.send_group_message(group, recent)
+        await note('cf', message_chain)
 
 
     async def nc_note():
         global nc
-        recent = await nc.get_recent_info()
-        with open('./oj_json/subscribe.json', 'r', encoding='utf-8') as f:
-            all_subscribe = json.load(f)
-            for group in all_subscribe["牛客"]:
-                await bot.send_group_message(group, recent)
+        message_chain = await nc.get_recent_info()
+        await note('牛客', message_chain)
 
 
     async def nc_shang_hao():
         message_chain = MessageChain([
             await Image.from_local('./img/up_nc.png')
         ])
-        with open('./oj_json/subscribe.json', 'r', encoding='utf-8') as f:
-            all_subscribe = json.load(f)
-            for group in all_subscribe["牛客"]:
-                await bot.send_group_message(group, recent)
+        await note('牛客', message_chain)
 
 
     async def lc_note():
         global lc
-        recent = await lc.get_recent_info()
-        with open('./oj_json/subscribe.json', 'r', encoding='utf-8') as f:
-            all_subscribe = json.load(f)
-            for group in all_subscribe["lc"]:
-                await bot.send_group_message(group, recent)
+        message_chain = await lc.get_recent_info()
+        await note('lc', message_chain)
 
 
     async def atc_note():
         global atc
-        recent = await atc.get_recent_info()
-        with open('./oj_json/subscribe.json', 'r', encoding='utf-8') as f:
-            all_subscribe = json.load(f)
-            for group in all_subscribe["atc"]:
-                await bot.send_group_message(group, recent)
+        message_chain = await atc.get_recent_info()
+        await note('atc', message_chain)
     
 
     async def notify_contest_info():
@@ -593,10 +619,7 @@ if __name__ == '__main__':
             msg = "早上好呀~今天的比赛有：\n" + res.strip()
         else:
             msg = "今天没有比赛哦~记得刷题呀！"
-        with open('./oj_json/subscribe.json', 'r', encoding='utf-8') as f:
-            all_subscribe = json.load(f)
-            for group in all_subscribe["today"]:
-                await bot.send_group_message(group, recent)
+        await note('atc', msg)
 
 
     async def notify_project():
