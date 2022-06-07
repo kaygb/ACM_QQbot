@@ -81,8 +81,7 @@ class NC(Contest):
         for contest in contest_data:
             if contest['ojName'] == 'NowCoder' \
                     and contest['startTime'] >= int(time.time()) * 1000 \
-                    and "专题" not in contest['contestName'] \
-                    and "牛客" in contest['contestName']:
+                    and "专题" not in contest['contestName']:
                 lately_contest = contest
                 if lately_contest.__contains__('endTime') and lately_contest.__contains__('startTime'):
                     durationSeconds = (int(lately_contest['endTime']) - int(lately_contest['startTime'])) // 1000

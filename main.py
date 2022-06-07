@@ -250,7 +250,7 @@ if __name__ == '__main__':
     @bot.on(MessageEvent)
     async def qcjj_query(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
-        if msg.strip() == "来只清楚":
+        if msg.strip()[:4] == "来只清楚":
             img_local = await lzqc()
             print(img_local)
             message_chain = MessageChain([
@@ -262,7 +262,7 @@ if __name__ == '__main__':
     @bot.on(MessageEvent)
     async def qcjj_query(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
-        if msg.strip() == "随机蕊神" or msg.strip() == "随机闵神" or msg.strip() == "来只蕊神":
+        if msg.strip()[:4] in ["随机蕊神", "随机闵神", "来只蕊神"]:
             img_local = await sjrs()
             print(img_local)
             message_chain = MessageChain([
@@ -274,7 +274,7 @@ if __name__ == '__main__':
     @bot.on(MessageEvent)
     async def setu_query(event: MessageEvent):
         msg = "".join(map(str, event.message_chain[Plain]))
-        if msg.strip().lower() == "setu" or msg.strip() == "涩图":
+        if msg.strip().lower() in ["setu", "涩图"]:
             img_list = os.listdir('./img/setu/')
             img_local = './img/setu/' + random.choice(img_list)
             print(img_local)
@@ -423,9 +423,10 @@ if __name__ == '__main__':
         if m:
             name = m.group(1)
             global cf
-            if int(time.time()) - cf.query_time < 5:  # 每次询问要大于5秒
-                await bot.send(event, '不要频繁查询，请{}秒后再试'.format(cf.query_time + 5 - int(time.time())))
+            if int(time.time()) - cf.query_time < 3:
+                await bot.send(event, '不要频繁查询，请{}秒后再试'.format(int(cf.query_time + 3 - int(time.time()))))
                 return
+            cf.query_time = time.time()
             statue = await cf.get_rating(name)
             await bot.send(event, statue)
 
@@ -493,8 +494,9 @@ if __name__ == '__main__':
             name = m.group(1)
             global atc
             if int(time.time()) - atc.query_time < 5:
-                await bot.send(event, '不要频繁查询，请{}秒后再试'.format(atc.query_time + 5 - int(time.time())))
+                await bot.send(event, '不要频繁查询，请{}秒后再试'.format(int(atc.query_time + 5 - int(time.time()))))
                 return
+            atc.query_time = time.time()
             statue = await atc.get_rating(name)
             if statue != -1:
                 await bot.send(event, statue)
@@ -565,7 +567,6 @@ if __name__ == '__main__':
                     await bot.send(event, content)
                 except:
                     await bot.send_friend_message(2454256424, "{}不存在".format(id))
-                    
 
 
     async def cf_note():
@@ -619,7 +620,7 @@ if __name__ == '__main__':
             msg = "早上好呀~今天的比赛有：\n" + res.strip()
         else:
             msg = "今天没有比赛哦~记得刷题呀！"
-        await note('atc', msg)
+        await note('today', msg)
 
 
     async def notify_project():
