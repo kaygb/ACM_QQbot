@@ -334,7 +334,7 @@ if __name__ == '__main__':
                         img_qcjj.append(id_qcjj)
                         await bot.send(event, '添加成功！')
             else:
-                await bot.send(event, "你没有该权限！")
+                await bot.send(event, "本群暂无权限，请联系管理员！")
 
 
     @bot.on(MessageEvent)
@@ -397,7 +397,7 @@ if __name__ == '__main__':
                 unames = m.group(1).split(',')
                 for uname in unames:
                     group_id = str(event.sender.group.id)
-                    await bot.send(event, '添加成功！' if await cf.add_cf_user(uname, group_id) else "该用户不存在！")
+                    await bot.send(event, '添加成功！' if await cf.add_cf_user(uname, group_id) else "该用户不存在或cf api异常！")
 
 
     @bot.on(MessageEvent)
@@ -566,7 +566,7 @@ if __name__ == '__main__':
                 try:
                     await bot.send(event, content)
                 except:
-                    await bot.send_friend_message(2454256424, "{}不存在".format(id))
+                    await bot.send_friend_message(2454256424, "{}不存在".format(user_id))
 
 
     async def cf_note():
