@@ -54,10 +54,10 @@ class ATC(Contest):
     async def get_rating(self, name):  # 返回一个列表，如果不存在用户则是空列表
         url = "https://atcoder.jp/users/" + name
         html = await get_html(url)
-        r = r'<th class="no-break">Rating<\/th><td><span class=\'user-gray\'>(.*?)<\/span>'
+        r = r'<th class="no-break">Rating<\/th><td><span class=(.*?)>(.*?)<\/span>'
         results = re.findall(r, html, re.S)
         try:
-            return results[0]
+            return results[0][1]
         except:
             return -1
 

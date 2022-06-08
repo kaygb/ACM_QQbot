@@ -569,6 +569,14 @@ if __name__ == '__main__':
                     await bot.send_friend_message(2454256424, "{}不存在".format(user_id))
 
 
+    async def auto_update_cf_user():
+        res = await cf.update_rating()
+        if res != "更新cf分数失败！":
+            await note('cf', 'cf rating更新成功！')
+        else:
+            await bot.send_friend_message(2454256424, 'cf rating更新失败！')
+
+
     async def cf_note():
         global cf
         message_chain = await cf.get_recent_info()
@@ -657,11 +665,13 @@ if __name__ == '__main__':
         await sche_add(nc_note, nc.note_time)
         await sche_add(nc_shang_hao, nc.begin_time)
         await sche_add(lc_note, lc.note_time)
-        scheduler.add_job(update, 'interval', hours=5, timezone='Asia/Shanghai', misfire_grace_time=60)
+        up_time = await cf.auto_update()
+        await sche_add(auto_update_cf_user, up_time)
+        scheduler.add_job(update, 'interval', hours=9, timezone='Asia/Shanghai', misfire_grace_time=60)
         scheduler.add_job(notify_contest_info, CronTrigger(hour=8, minute=0, timezone='Asia/Shanghai'),
                           misfire_grace_time=60)
         # scheduler.add_job(notify_project, 'cron', hour=21, timezone='Asia/Shanghai', misfire_grace_time=60)
-        scheduler.add_job(refresh_job, 'cron', hour=2, minute=0, second=0, timezone='Asia/Shanghai',
+        scheduler.add_job(refresh_job, 'cron', hour=5, minute=0, second=0, timezone='Asia/Shanghai',
                           misfire_grace_time=60)
 
         # scheduler.add_job(rs, 'cron', hour='0-23', timezone='Asia/Shanghai')

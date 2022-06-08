@@ -99,6 +99,7 @@ class CF(Contest):
         all_rating = json.load(f)
         local_rating = all_rating["all_rating"]
         for uname in local_rating:
+            print(uname)
             rating_info = await self.query_user_rating(uname, final_contest)
             if not rating_info:
                 return "更新cf分数失败！"
@@ -112,6 +113,15 @@ class CF(Contest):
         for uname in rating:
             res += await self.format_rating_res(uname, rating[uname])
         return res.rstrip('\n')
+    
+    async def auto_update(self):
+        final_contest = await self.get_final_contest()
+        up = final_contest['startTimeSeconds'] + final_contest['durationSeconds']
+        if final_contest['type'] == 'ICPC':
+            up += 21 * 60 * 60
+        else:
+            up += 5 * 60 * 60
+        return up
 
     # 获取本地存储所有用户rating信息
     async def get_cf_rating(self, group_id):
