@@ -80,17 +80,17 @@ class CF(Contest):
         if json_data['status'] == "OK":
             json_data = json_data['result']
             if len(json_data) == 0:
-                return [0, 0, 0]
+                return [0, 0]
             final_rating = json_data[-1]
-            differ = int(final_rating['newRating']) - int(final_rating['oldRating'])
-            if differ > 0:
-                differ = '+' + str(differ)
-            else:
-                differ = str(differ)
-            is_recent = 1
             if final_rating['contestId'] != final_contest['id']:
-                is_recent = 0
-            return [final_rating['newRating'], differ, is_recent]
+                differ = 'X'
+            else:
+                differ = int(final_rating['newRating']) - int(final_rating['oldRating'])
+                if differ > 0:
+                    differ = '+' + str(differ)
+                else:
+                    differ = str(differ)
+            return [final_rating['newRating'], differ]
         else:
             return []
 
@@ -198,10 +198,7 @@ class CF(Contest):
     async def format_rating_res(self, uname, rating_info):
         if rating_info[0] == 0:
             return '"{}"还未进行过比赛\n'.format(uname)
-        if rating_info[2] == 0:
-            return '"{}"：{}，X\n'.format(uname, rating_info[0])
-        else:
-            return '"{}"：{}，{}\n'.format(uname, rating_info[0], rating_info[1])
+        return '"{}"：{}，{}\n'.format(uname, rating_info[0], rating_info[1])
 
     async def update_local_contest(self):
         url = "https://codeforce-api.170601.xyz/api/contest.list?gym=false"
