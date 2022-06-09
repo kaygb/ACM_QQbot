@@ -566,7 +566,13 @@ if __name__ == '__main__':
                 try:
                     await bot.send(event, content)
                 except:
-                    await bot.send_friend_message(2454256424, "{}不存在".format(user_id))
+                    with open('./oj_json/subscribe.json', 'r+', encoding='utf-8') as f:
+                        all_subscribe = json.load(f)
+                        del all_subscribe[name][user_id]
+                        f.seek(0)
+                        f.truncate()
+                        json.dump(all_subscribe, f, indent=4)
+                    await bot.send_friend_message(2454256424, "{}已成功取消订阅！".format(user_id))
 
 
     async def auto_update_cf_user():
