@@ -9,7 +9,7 @@ class CF(Contest):
     async def get_rating(self, name):
         def pd_color(rating):
             if rating < 1200:
-                return "灰名蒟蒻"
+                return "灰名隐藏大佬"
             if rating < 1400:
                 return '绿名Pupil'
             if rating < 1600:
@@ -18,9 +18,13 @@ class CF(Contest):
                 return '蓝名Expert'
             if rating < 2100:
                 return '紫名Candidate master'
+            if rating < 2300:
+                return '橙名International Master'
             if rating < 2400:
                 return '橙名Master'
             if rating < 2600:
+                return '红名Grandmaster'
+            if rating < 3000:
                 return '红名巨巨'
             else:
                 return '黑红名神犇'
@@ -30,6 +34,8 @@ class CF(Contest):
             rating = all_rating["all_rating"]
             if name in rating:
                 rating_info = rating[name]
+                if rating_info[0] == 0:
+                    return '"{}"还未进行过比赛\n'.format(name)
                 return '"{}"是{}，当前rating为：{}'.format(name, pd_color(rating_info[0]), rating_info[0])
         url = "https://codeforce-api.170601.xyz/api/user.rating?handle=" + name
         json_data = await get_json(url)
