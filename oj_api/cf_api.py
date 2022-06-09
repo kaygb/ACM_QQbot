@@ -198,11 +198,10 @@ class CF(Contest):
     async def format_rating_res(self, uname, rating_info):
         if rating_info[0] == 0:
             return '"{}"还未进行过比赛\n'.format(uname)
-        # if rating_info[3] == 0:
         if rating_info[2] == 0:
             return '"{}"：{}，X\n'.format(uname, rating_info[0])
         else:
-            return '"{}"：{}，{}\n'.format(uname, rating_info[0], rating_info[1], rating_info[2])
+            return '"{}"：{}，{}\n'.format(uname, rating_info[0], rating_info[1])
 
     async def update_local_contest(self):
         url = "https://codeforce-api.170601.xyz/api/contest.list?gym=false"
