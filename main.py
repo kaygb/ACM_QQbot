@@ -661,6 +661,11 @@ if __name__ == '__main__':
 
     async def sche_job():
         global cf, atc, nc, lc
+        scheduler.add_job(update, 'interval', hours=9, timezone='Asia/Shanghai', misfire_grace_time=60)
+        scheduler.add_job(notify_contest_info, CronTrigger(hour=8, minute=0, timezone='Asia/Shanghai'),
+                          misfire_grace_time=60)
+        scheduler.add_job(refresh_job, 'cron', hour=5, minute=0, second=0, timezone='Asia/Shanghai',
+                          misfire_grace_time=60)
         await sche_add(update, cf.update_time)
         await sche_add(update, atc.update_time)
         await sche_add(update, nc.update_time)
@@ -673,14 +678,8 @@ if __name__ == '__main__':
         await sche_add(lc_note, lc.note_time)
         up_time = await cf.auto_update()
         await sche_add(auto_update_cf_user, up_time)
-        scheduler.add_job(update, 'interval', hours=9, timezone='Asia/Shanghai', misfire_grace_time=60)
-        scheduler.add_job(notify_contest_info, CronTrigger(hour=8, minute=0, timezone='Asia/Shanghai'),
-                          misfire_grace_time=60)
-        # scheduler.add_job(notify_project, 'cron', hour=21, timezone='Asia/Shanghai', misfire_grace_time=60)
-        scheduler.add_job(refresh_job, 'cron', hour=5, minute=0, second=0, timezone='Asia/Shanghai',
-                          misfire_grace_time=60)
-
         # scheduler.add_job(rs, 'cron', hour='0-23', timezone='Asia/Shanghai')
+        # scheduler.add_job(notify_project, 'cron', hour=21, timezone='Asia/Shanghai', misfire_grace_time=60)
 
 
     @Filter(FriendMessage)
