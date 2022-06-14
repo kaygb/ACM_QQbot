@@ -63,7 +63,7 @@ class CF(Contest):
             contest_list_all = list(json_data['result'])
             for contest in contest_list_all:
                 if contest['relativeTimeSeconds'] > 0:
-                    if contest['name'][:6] != 'Kotlin':
+                    if 'Kotlin' not in contest['name']:
                         if 'Unrated' not in contest['name']:
                             if 'Div. 2' in contest['name'] or 'Div. 3' in contest['name'] or 'Div. 4' in contest[
                                 'name'] or 'Codeforces Global Round' in contest['name']:
@@ -100,7 +100,7 @@ class CF(Contest):
         rating = {}
         final_contest = await self.get_final_contest()
         if not final_contest:
-            return "更新cf分数失败！"
+            return ''
         f = open('./oj_json/cf_rating.json', 'r+', encoding='utf-8')
         all_rating = json.load(f)
         local_rating = all_rating["all_rating"]
@@ -108,7 +108,7 @@ class CF(Contest):
             print(uname)
             rating_info = await self.query_user_rating(uname, final_contest)
             if not rating_info:
-                return "更新cf分数失败！"
+                return ''
             rating[uname] = rating_info
         rating = dict(sorted(rating.items(), key=lambda x: x[1][0], reverse=True))
         all_rating["all_rating"] = rating

@@ -91,13 +91,13 @@ async def query_today_contest():
     return res.rstrip('\n')
 
 
-async def sche_add(func, implement):
+async def sche_add(func, implement, id=None):
     scheduler.add_job(func, CronTrigger(month=time.localtime(implement).tm_mon,
                                         day=time.localtime(implement).tm_mday,
                                         hour=time.localtime(implement).tm_hour,
                                         minute=time.localtime(implement).tm_min,
                                         second=time.localtime(implement).tm_sec,
-                                        timezone='Asia/Shanghai'), misfire_grace_time=60)
+                                        timezone='Asia/Shanghai'), id=id, misfire_grace_time=60)
 
 
 if __name__ == '__main__':
@@ -380,8 +380,7 @@ if __name__ == '__main__':
         if msg.strip().lower() == "更新cf分数":
             if event.sender.id == 2454256424:
                 await bot.send(event, '更新中……')
-                res = await cf.update_rating()
-                await bot.send(event, res)
+                await auto_update_cf_user()
             else:
                 await bot.send(event, "你没有该权限！")
 
@@ -555,16 +554,23 @@ if __name__ == '__main__':
             await bot.send(event, res)
 
 
-    async def note(name, content):
+    async def default(x):
+        return ''
+
+
+    async def note(name, content='未指定发送内容', func=default):
         with open('./oj_json/subscribe.json', 'r', encoding='utf-8') as f:
             all_subscribe = json.load(f)
             for user_id in all_subscribe[name]:
                 if all_subscribe[name][user_id] == 'GroupMessage':
                     event = Group(id=user_id, name='', permission='MEMBER')
+                    tmp = await func(user_id)
+                    message_chain = tmp + content
                 else:
                     event = Friend(id=user_id)
+                    message_chain = content
                 try:
-                    await bot.send(event, content)
+                    await bot.send(event, message_chain)
                 except:
                     with open('./oj_json/subscribe.json', 'r+', encoding='utf-8') as f:
                         all_subscribe = json.load(f)
@@ -576,11 +582,25 @@ if __name__ == '__main__':
 
 
     async def auto_update_cf_user():
-        res = await cf.update_rating()
-        if res != "更新cf分数失败！":
-            await note('cf', 'cf rating更新成功！')
-        else:
-            await bot.send_friend_message(2454256424, 'cf rating更新失败！')
+        flag = 0
+        while(flag < 5):
+            res = await cf.update_rating()
+            if res:
+                await note('cf', 'cf rating更新成功！')
+                await note('cf', '', cf.get_cf_rating)
+                return
+            else:
+                await bot.send_friend_message(2454256424, 'cf rating更新失败！')
+                time.sleep(300)
+                flag += 1
+
+    
+    @bot.on(MessageEvent)
+    async def cancel_update_sche(event: MessageEvent):
+        msg = "".join(map(str, event.message_chain[Plain]))
+        if msg == '取消自动更新':
+            scheduler.remove_job('up_rating')
+            await bot.send(event, '取消成功！')
 
 
     async def cf_note():
@@ -677,7 +697,9 @@ if __name__ == '__main__':
         await sche_add(nc_shang_hao, nc.begin_time)
         await sche_add(lc_note, lc.note_time)
         up_time = await cf.auto_update()
-        await sche_add(auto_update_cf_user, up_time)
+        auto_up_note = '下一次cf rating自动更新时间为：' + time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(up_time))
+        await bot.send_friend_message(2454256424, auto_up_note)
+        await sche_add(auto_update_cf_user, up_time, id='up_rating')
         # scheduler.add_job(rs, 'cron', hour='0-23', timezone='Asia/Shanghai')
         # scheduler.add_job(notify_project, 'cron', hour=21, timezone='Asia/Shanghai', misfire_grace_time=60)
 
